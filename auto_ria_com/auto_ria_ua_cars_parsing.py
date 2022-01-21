@@ -1,3 +1,4 @@
+import os
 import platform
 import subprocess
 import sys
@@ -86,6 +87,9 @@ def parse():
         if platform.system() == 'Linux':
             opener = FILE if sys.platform == "darwin" else "xdg-open"
             subprocess.call([opener, FILE])
+        elif platform.system() == 'Windows':
+            os.startfile(f'..\{date}_UA.csv')
+
     else:
         print('Error')
 
