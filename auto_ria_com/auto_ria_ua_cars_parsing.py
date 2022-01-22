@@ -10,7 +10,6 @@ import csv
 import datetime
 
 date = datetime.datetime.now().strftime('%d%m%Y')
-URL = 'https://auto.ria.com/car/volkswagen/'
 USER = UserAgent().random
 HEADERS = {'user-agent': USER}
 CLASS_CONTENT = SoupStrainer(attrs={
@@ -71,13 +70,13 @@ def save_file(items, path):
             ])
 
 
-def parse():
+def parse(URL):
     html = get_html(URL)
     if html.status_code == 200:
         pages_count = get_pages_count(html)
         cars = []
         if pages_count > 25:
-            pages_count = 1
+            pages_count = 25
         for page in range(1, pages_count + 1):
             print(f'Парсинг страницы {page} из {pages_count}...')
             html = get_html(URL, params={'page': page})
@@ -92,6 +91,3 @@ def parse():
 
     else:
         print('Error')
-
-
-parse()
