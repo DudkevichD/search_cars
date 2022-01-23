@@ -1,26 +1,17 @@
-import csv
-import datetime
 import os
 import platform
 import subprocess
 import sys
 
 import requests
-from bs4 import BeautifulSoup, SoupStrainer
-from fake_useragent import UserAgent
+from bs4 import BeautifulSoup
 
-date = datetime.datetime.now().strftime('%d%m%Y')
-USER = UserAgent().random
-HEADERS = {'user-agent': USER}
-URL = 'https://www.avito.ru/rossiya/avtomobili/mercedes-benz-ASgBAgICAUTgtg3omCg?cd=1'
-CLASS_CONTENT = SoupStrainer(attrs={
-    'class': ['items-items-kAJAg'],
-})
-FILE = f'../{date}_RU.csv'
+from general_data.CONSTANTS import HEADERS, date
+from general_data.save_file import save_file
 
 YEARS = [str(i) for i in range(1900, 2025)]
 CAPACITY = [str(i / 10) for i in range(10, 70, 1)]
-
+FILE = f'../{date}_RU.csv'
 
 def get_html(url, params=None):
     request = requests.get(url, headers=HEADERS, params=params)
@@ -36,7 +27,7 @@ def get_pages_count(html):
 
 
 def get_content(html):
-    soup = BeautifulSoup(html, 'html.parser', parse_only=CLASS_CONTENT)
+    soup = BeautifulSoup(html, 'html.parser')
     items = soup.findAll('div', class_='iva-item-content-rejJg')
     cars = []
 
@@ -50,7 +41,8 @@ def get_content(html):
                 year = '0000'
 
         description = item.find('div',
-                                class_='iva-item-text-Ge6dR text-text-LurtD text-size-s-BxGpL').get_text().split()
+                                class_='iva-item-text-Ge6dR text-text-LurtD text-size-s-BxGpL'
+                                ).get_text().split()
 
         engine = description[-1]
         for desc in description:
@@ -83,29 +75,12 @@ def get_content(html):
             'engine': engine,
             'mileage': mileage,
             'price_dollars': price_dollars,
-            'city': item.find('span', class_='geo-address-fhHd0 text-text-LurtD text-size-s-BxGpL').get_text().split()[
-                -1],
+            'city': item.find('span', class_='geo-address-fhHd0 text-text-LurtD text-size-s-BxGpL'
+                              ).get_text().split()[-1],
             'link': url + item.find('a', class_='link-link-MbQDP').get('href'),
         })
 
     return cars
-
-
-def save_file(items, path):
-    with open(path, 'w', newline='') as file:
-        writer = csv.writer(file, )
-        writer.writerow(['Марка', 'Модель', 'Год', 'Двигатель', 'Пробег', 'Стоимость в рублях', 'Город', 'Ссылка', ])
-        for item in items:
-            writer.writerow([
-                item['brand'],
-                item['model'],
-                item['year'],
-                item['engine'],
-                item['mileage'],
-                item['price_dollars'],
-                item['city'],
-                item['link'],
-            ])
 
 
 def parse(URL):
@@ -113,8 +88,8 @@ def parse(URL):
     if html.status_code == 200:
         pages_count = get_pages_count(html)
         cars = []
-        if pages_count > 25:
-            pages_count = 5
+        if pages_count > 10:
+            pages_count = 10
         for page in range(1, pages_count + 1):
             print(f'Парсинг страницы {page} из {pages_count}...')
             html = get_html(URL, params={'page': page})
@@ -125,10 +100,7 @@ def parse(URL):
             opener = FILE if sys.platform == "darwin" else "xdg-open"
             subprocess.call([opener, FILE])
         elif platform.system() == 'Windows':
-            os.startfile(f'..\{date}_UA.csv')
+            os.startfile(f'..\{date}_RU.csv')
 
     else:
-        print(html.status_code)
-
-
-parse(URL)
+        print(html)

@@ -3,25 +3,12 @@ import platform
 import subprocess
 import sys
 
-import requests
-from bs4 import BeautifulSoup, SoupStrainer
-from fake_useragent import UserAgent
-import csv
-import datetime
+from bs4 import BeautifulSoup
 
-date = datetime.datetime.now().strftime('%d%m%Y')
-USER = UserAgent().random
-HEADERS = {'user-agent': USER}
-CLASS_CONTENT = SoupStrainer(attrs={
-    'class': ['standart-view m-view result-explore'],
-})
+from general_data.CONSTANTS import date
+from general_data.get_html import get_html
+from general_data.save_file import save_file
 FILE = f'../{date}_UA.csv'
-
-
-def get_html(url, params=None):
-    request = requests.get(url, headers=HEADERS, params=params)
-    return request
-
 
 def get_pages_count(html):
     soup = BeautifulSoup(html.text, 'html.parser')
@@ -53,30 +40,13 @@ def get_content(html):
     return cars
 
 
-def save_file(items, path):
-    with open(path, 'w', newline='') as file:
-        writer = csv.writer(file, )
-        writer.writerow(['Марка', 'Модель', 'Год', 'Двигатель', 'Пробег', 'Стоимость в долларах', 'Город', 'Ссылка', ])
-        for item in items:
-            writer.writerow([
-                item['brand'],
-                item['model'],
-                item['year'],
-                item['engine'],
-                item['mileage'],
-                item['price_dollars'],
-                item['city'],
-                item['link'],
-            ])
-
-
 def parse(URL):
     html = get_html(URL)
     if html.status_code == 200:
         pages_count = get_pages_count(html)
         cars = []
-        if pages_count > 25:
-            pages_count = 25
+        if pages_count > 10:
+            pages_count = 10
         for page in range(1, pages_count + 1):
             print(f'Парсинг страницы {page} из {pages_count}...')
             html = get_html(URL, params={'page': page})
